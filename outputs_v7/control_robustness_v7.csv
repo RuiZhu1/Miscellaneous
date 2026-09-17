@@ -1,0 +1,15 @@
+protocol,metric,value
+nominal_clean_control,mean_infidelity,0.01454903275507076
+nominal_clean_control,std_infidelity,0.0014566028942081433
+nominal_clean_control,p95_infidelity,0.017175213742864702
+nominal_clean_control,worst_infidelity,0.019570014710165506
+nominal_clean_control,cvar95_infidelity,0.01799867334816112
+nominal_clean_control,failure_gt_1pct,1.0
+nominal_clean_control,n_samples,300.0
+robust_control,mean_infidelity,0.014674921002656811
+robust_control,std_infidelity,0.0013305432924203692
+robust_control,p95_infidelity,0.01684540258125263
+robust_control,worst_infidelity,0.020467863294046262
+robust_control,cvar95_infidelity,0.017634051224082157
+robust_control,failure_gt_1pct,1.0
+robust_control,n_samples,300.0
