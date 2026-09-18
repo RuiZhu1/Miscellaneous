@@ -1,0 +1,60 @@
+{
+  "encoding": {
+    "fermion_definition": "d=(gamma_L+i gamma_R)/2",
+    "n_d": "d^dagger d",
+    "logical_Z": "1-2 n_d",
+    "identity": "i gamma_L gamma_R = 2 n_d - 1 = -Z",
+    "algebra_checks": {
+      "CAR_error": 0.0,
+      "gamma_L_hermiticity_error": 0.0,
+      "gamma_R_hermiticity_error": 0.0,
+      "gamma_L_square_error": 0.0,
+      "gamma_R_square_error": 0.0,
+      "parity_minus_Z_error": 0.0,
+      "parity_minus_2n_minus_1_error": 0.0,
+      "max_exact_compensation_infidelity": 2.220446049250313e-16,
+      "max_phase_error_formula_error": 4.077510331917101e-16
+    }
+  },
+  "effective_hamiltonian": {
+    "form": "[h_z(n_g)+sign*E_M/2]Z + Omega/2(cos(phi)X+sin(phi)Y)",
+    "majorana_z_sign_default": -1.0,
+    "interpretation": "For positive BdG E_low and Z=1-2n_d, H_M=(i E_M/2)gamma_L gamma_R gives sign=-1.",
+    "microscopic_projection_claim": false
+  },
+  "nominal_bdg": {
+    "E_low": 0.0015138455264153395,
+    "E_next": 0.08276054395667347,
+    "bulk_gap": 0.05500626571169918,
+    "E_low_over_gap": 0.027521328830969208,
+    "E_low_over_next": 0.018291875017252945,
+    "R_L": 121.58941828665323,
+    "R_R": 121.58941828665628
+  },
+  "calibration": {
+    "Ec": 0.8,
+    "theta_T": 0.7853981633974483,
+    "t_T": 0.5,
+    "E_M": 0.0015138455264153395,
+    "n_g_ignore_E_M": 0.7454369260617026,
+    "n_g_correct_E_M": 0.745673464425205,
+    "n_g_majorana_compensation": 0.5002365383635023,
+    "T_error_from_exact_compensation": 0.0,
+    "H_error_from_exact_compensation": 2.220446049250313e-16
+  },
+  "core_law": {
+    "T_exact": "1-F=0 under exact longitudinal compensation",
+    "T_calibration_error": "1-F=sin^2(delta_E_M*t/2) ~ (delta_E_M*t)^2/4",
+    "H_control": "non-commuting drive supplies a second Bloch axis; exact compensation removes the nominal E_M detuning",
+    "not_claimed": [
+      "E_M is not an intrinsic T-gate error floor",
+      "braiding-only Clifford limitation does not imply a continuously tunable longitudinal Hamiltonian is Clifford-only",
+      "no vendor roadmap comparison"
+    ]
+  },
+  "bdg_fit_optional": {
+    "fit_success": 0.0,
+    "note": "optional diagnostic skipped"
+  },
+  "operating_window": null
+}
