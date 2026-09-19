@@ -774,3 +774,196 @@ def main():
 
 if __name__ == "__main__":
     main()
+# !pip install -q cupy-cuda12x
+# !python majorana_noise_law_v22_2.py --device gpu --n-configs 200 --outdir outputs_v22_2
+
+# Majorana noise-kernel law v22.2 | device = gpu (NVIDIA A100-SXM4-40GB)
+#   scan 10/200 configs (10 tried, 20 points, 10s)
+#   scan 20/200 configs (20 tried, 40 points, 18s)
+#   scan 30/200 configs (30 tried, 60 points, 27s)
+#   scan 40/200 configs (42 tried, 80 points, 36s)
+#   scan 50/200 configs (53 tried, 100 points, 45s)
+#   scan 60/200 configs (64 tried, 120 points, 54s)
+#   scan 70/200 configs (76 tried, 140 points, 64s)
+#   scan 80/200 configs (86 tried, 160 points, 74s)
+#   scan 90/200 configs (97 tried, 180 points, 82s)
+#   scan 100/200 configs (108 tried, 200 points, 91s)
+#   scan 110/200 configs (121 tried, 220 points, 99s)
+#   scan 120/200 configs (131 tried, 240 points, 106s)
+#   scan 130/200 configs (142 tried, 260 points, 116s)
+#   scan 140/200 configs (152 tried, 280 points, 126s)
+#   scan 150/200 configs (164 tried, 300 points, 133s)
+#   scan 160/200 configs (174 tried, 320 points, 140s)
+#   scan 170/200 configs (184 tried, 340 points, 151s)
+#   scan 180/200 configs (196 tried, 360 points, 159s)
+#   scan 190/200 configs (207 tried, 380 points, 165s)
+#   scan 200/200 configs (218 tried, 400 points, 172s)
+# scan done in 172s: 400 points, 383 kept with (L-1)/xi >= 4
+
+# ======================== phase = node  (n = 183) ========================
+# sanity: median d/(L-1-2xi) = 1.023 (expect ~1);  xi in [3.65,22.05];  (L-1)/xi in [4.0,19.9]
+
+# [q*-search] data-driven dominant channel (NOT assumed a priori): median capture 100.0%; median |q*-2kF| = 0.245 rad (39% within 0.2 rad); median |q*-FFT peak| = 0.002 rad (100% within 0.2 rad)
+
+# [H1, CANDIDATE] envelope law -- ladder (CV = 5-fold x10; holdout = train one half / test other half of each variable)
+#   model                                    CV relerr    CV R2  hold worst  hold med R2
+#   constant                                    84.52%  -0.0078     658.98%      -0.4588
+#   E_gap/Delta                                 83.32%   0.2954     609.23%      -0.1563
+#   (L-1)/xi                                    14.83%   0.9937      34.34%       0.9871
+#   (L-1)/xi + log xi                            7.13%   0.9979      12.69%       0.9956
+#   d/xi + xi  [v21.4 law]                       6.41%   0.9984      13.77%       0.9970
+#   d/xi + log xi                                5.75%   0.9986      12.01%       0.9975
+#   (L-1)/xi + log L + log xi [free]             6.65%   0.9982      11.74%       0.9965
+#   free + log(E_gap/Delta)                      6.47%   0.9982      14.31%       0.9962
+#   free + Delta/Ez + mu/mu_c [CANDIDATE]        2.88%   0.9994       7.23%       0.9985
+#   candidate + interaction term                 2.71%   0.9994       7.39%       0.9987
+#   THEORY frozen (-1,+1,-2)                    24.27%   0.9844      55.35%       0.9745
+
+#   [CANDIDATE] free fit  log N0 = A + B (L-1)/xi + C1 log L + C2 log xi:
+#     B  = -0.871  95% CI [-0.894,-0.824]   theory -1.0  OUTSIDE
+#     C1 = -0.605  95% CI [-0.936,-0.392]   theory +1.0  OUTSIDE
+#     C2 = -0.109  95% CI [-0.302,+0.215]   theory -2.0  OUTSIDE
+#   frozen theory (CANDIDATE, not confirmed): kappa = exp(A) = 1.315;  residual std of log N0 = 0.3105
+#   residual correlation with parameters (hidden dependence would show here): L=-0.08, alpha=-0.44, Ez=+0.37, Delta=-0.55, t0=+0.35, xi=+0.77, E_gap=-0.76, kF=+0.06, mu=+0.26
+
+#   [CANDIDATE, physically-motivated correction] log N0 = a0 + a1 (L-1)/xi + a2 logL + a3 logxi + a4 log(E_gap/Delta) + a5 Delta/Ez + a6 mu/mu_c:
+#     coeffs: a0=+2.613, Lx=-0.870, logL=-0.580, logxi=-0.305, loggap=+0.008, dez=-1.212, mfrac=+0.020
+#     residual std of log N0 = 0.0599 (vs 0.3105 for the frozen-shape candidate)
+#     residual correlation with parameters (should be near zero if this correction is complete): L=+0.00, alpha=-0.06, Ez=-0.10, Delta=-0.02, t0=+0.02, xi=-0.03, E_gap=-0.06, kF=-0.06, mu=-0.04
+
+# [H2, CANDIDATE] noise-correlation scan.  p0: median 0.6782, IQR [0.676,0.6808]
+#     xi_n  med N/N0 | two-channel median rel.err using:   q*=2kF   q*=data | law CV err:  theory  cand.
+#        0     1.000 |     0.0%      0.0% |          24.3%    2.9%
+#        1     1.614 |     1.7%      0.6% |          24.0%    2.4%
+#        2     2.766 |     1.6%      1.0% |          23.5%    2.4%
+#        5     6.304 |     1.4%      1.1% |          23.5%    2.4%
+#       10    11.562 |     1.2%      1.1% |          22.3%    2.4%
+#       20    19.546 |     0.9%      0.9% |          22.0%    2.5%
+#       50    31.454 |     0.5%      0.5% |          21.6%    2.4%
+#      inf    48.104 |     0.0%      0.0% |          23.5%    2.4%
+
+# [H2-finite, CANDIDATE] finite-chain channel projection audit, q = q_star (data-driven, boundary-aware Rayleigh quotient)
+#      xi_n |  q* capture    q* err   q* worst
+#         0 |      100.0%       0.0%        0.4%
+#         1 |      100.0%       0.8%        1.6%
+#         2 |      100.0%       1.1%        2.0%
+#         5 |      100.0%       1.2%        2.1%
+#        10 |      100.0%       1.1%        1.7%
+#        20 |      100.0%       0.9%        1.2%
+#        50 |      100.0%       0.5%        0.6%
+#       inf |      100.0%       0.0%        0.0%
+#   FD check |sum K| vs d eps/d mu (uniform shift): rel.err = 1.5e-06, 3.2e-06, 7.0e-06
+
+#   predeclared verdicts (H1/H2 only -- H3 is an exact identity, listed separately):
+#     [FAIL] H1 frozen-theory worst holdout err <= 10%
+#     [FAIL] H1 free-fit 95% CI contains (-1,+1,-2)
+#     [FAIL] H1 residual |corr| < 0.3 with all parameters (frozen shape)
+#     [PASS] H1 residual |corr| < 0.3 with all parameters (corrected)
+#     [PASS] H1 candidate correction beats frozen theory on holdout
+#     [PASS] H2 two-channel with data-driven q* err <= 15% for xi_n >= 5
+#     [PASS] H2 finite q*-channel median error <= 15% at every xi_n
+
+# [H3, EXACT IDENTITY] pair rule, phase = node, rho_site = 0.6: penalty Pi = N_geom/max(n1,n2) by exponent mismatch Delta = |ln n1/n2|
+#     xi_n med|rho_eff| |    D in [0,0.5)    D in [0.5,1)      D in [1,2)      D in [2,4)    D in [4,inf) | identity err
+#        0        0.355 |   1.224 (n=501)   1.094 (n=434)   1.032 (n=704)   1.008 (n=725)   1.000 (n=623) | 4.4e-16
+#        1        0.473 |   1.322 (n=493)   1.152 (n=454)   1.055 (n=698)   1.014 (n=721)   1.001 (n=621) | 4.4e-16
+#        2        0.519 |   1.360 (n=498)   1.176 (n=450)   1.065 (n=697)   1.017 (n=720)   1.001 (n=622) | 4.4e-16
+#        5        0.546 |   1.381 (n=502)   1.192 (n=446)   1.072 (n=703)   1.019 (n=721)   1.001 (n=615) | 4.4e-16
+#       10        0.562 |   1.391 (n=507)   1.199 (n=442)   1.078 (n=705)   1.020 (n=721)   1.001 (n=612) | 4.4e-16
+#       20        0.576 |   1.406 (n=512)   1.211 (n=447)   1.083 (n=707)   1.020 (n=717)   1.001 (n=604) | 4.4e-16
+#       50        0.588 |   1.426 (n=519)   1.218 (n=470)   1.090 (n=685)   1.022 (n=717)   1.001 (n=596) | 4.4e-16
+#      inf        0.600 |   1.440 (n=531)   1.232 (n=475)   1.098 (n=671)   1.024 (n=722)   1.001 (n=588) | 4.4e-16
+
+# ======================== phase = anti  (n = 200) ========================
+# sanity: median d/(L-1-2xi) = 1.003 (expect ~1);  xi in [3.65,17.23];  (L-1)/xi in [4.8,19.9]
+
+# [q*-search] data-driven dominant channel (NOT assumed a priori): median capture 88.2%; median |q*-2kF| = 0.237 rad (40% within 0.2 rad); median |q*-FFT peak| = 0.003 rad (100% within 0.2 rad)
+
+# [H1, CANDIDATE] envelope law -- ladder (CV = 5-fold x10; holdout = train one half / test other half of each variable)
+#   model                                    CV relerr    CV R2  hold worst  hold med R2
+#   constant                                    82.05%  -0.0114     296.40%      -0.5144
+#   E_gap/Delta                                 80.68%   0.3124     235.67%       0.0320
+#   (L-1)/xi                                    20.38%   0.9526      45.70%       0.9487
+#   (L-1)/xi + log xi                           11.62%   0.9564      42.77%       0.9559
+#   d/xi + xi  [v21.4 law]                       8.67%   0.9571      57.45%       0.9567
+#   d/xi + log xi                                7.94%   0.9570      73.80%       0.9522
+#   (L-1)/xi + log L + log xi [free]            13.57%   0.9405      24.90%       0.9295
+#   free + log(E_gap/Delta)                     13.18%   0.9400      24.79%       0.9324
+#   free + Delta/Ez + mu/mu_c [CANDIDATE]       12.20%   0.9425      27.03%       0.9317
+#   candidate + interaction term                12.55%   0.9422      27.12%       0.9312
+#   THEORY frozen (-1,+1,-2)                    28.92%   0.9338      59.13%       0.9163
+
+#   [CANDIDATE] free fit  log N0 = A + B (L-1)/xi + C1 log L + C2 log xi:
+#     B  = -1.208  95% CI [-1.759,-0.600]   theory -1.0  inside
+#     C1 = +1.354  95% CI [-3.409,+5.893]   theory +1.0  inside
+#     C2 = -2.141  95% CI [-6.640,+2.637]   theory -2.0  inside
+#   frozen theory (CANDIDATE, not confirmed): kappa = exp(A) = 0.3601;  residual std of log N0 = 0.6610
+#   residual correlation with parameters (hidden dependence would show here): L=-0.17, alpha=-0.39, Ez=+0.29, Delta=-0.37, t0=+0.25, xi=+0.43, E_gap=-0.62, kF=+0.10, mu=+0.25
+
+#   [CANDIDATE, physically-motivated correction] log N0 = a0 + a1 (L-1)/xi + a2 logL + a3 logxi + a4 log(E_gap/Delta) + a5 Delta/Ez + a6 mu/mu_c:
+#     coeffs: a0=-0.781, Lx=-1.267, logL=+2.136, logxi=-3.267, loggap=-0.160, dez=-1.906, mfrac=+0.360
+#     residual std of log N0 = 0.4452 (vs 0.6610 for the frozen-shape candidate)
+#     residual correlation with parameters (should be near zero if this correction is complete): L=+0.00, alpha=-0.10, Ez=-0.09, Delta=-0.07, t0=+0.06, xi=-0.01, E_gap=-0.03, kF=-0.12, mu=-0.04
+
+# [H2, CANDIDATE] noise-correlation scan.  p0: median 2.066e-06, IQR [5.176e-07,4.738e-06]
+#     xi_n  med N/N0 | two-channel median rel.err using:   q*=2kF   q*=data | law CV err:  theory  cand.
+#        0     1.000 |     0.0%      0.0% |          29.2%   13.3%
+#        1     0.556 |     9.7%      0.1% |          31.2%   10.6%
+#        2     0.307 |    12.4%      0.1% |          33.7%   11.3%
+#        5     0.127 |    13.1%      0.4% |          34.2%   11.3%
+#       10     0.064 |    12.7%      1.1% |          35.1%   11.4%
+#       20     0.033 |    12.0%      1.8% |          35.4%   11.2%
+#       50     0.013 |    10.9%      2.4% |          35.5%   11.1%
+#      inf     0.000 |     0.0%      0.0% |          80.2%   80.5%
+
+# [H2-finite, CANDIDATE] finite-chain channel projection audit, q = q_star (data-driven, boundary-aware Rayleigh quotient)
+#      xi_n |  q* capture    q* err   q* worst
+#         0 |       88.2%      11.8%       17.2%
+#         1 |       88.2%      11.6%       16.9%
+#         2 |       88.2%      11.1%       16.2%
+#         5 |       88.2%       8.9%       15.8%
+#        10 |       88.2%       7.0%       15.5%
+#        20 |       88.2%       5.7%       15.0%
+#        50 |       88.2%       6.4%       14.8%
+#       inf |       88.2%       0.0%        0.0%
+
+#   predeclared verdicts (H1/H2 only -- H3 is an exact identity, listed separately):
+#     [FAIL] H1 frozen-theory worst holdout err <= 10%
+#     [PASS] H1 free-fit 95% CI contains (-1,+1,-2)
+#     [FAIL] H1 residual |corr| < 0.3 with all parameters (frozen shape)
+#     [PASS] H1 residual |corr| < 0.3 with all parameters (corrected)
+#     [PASS] H1 candidate correction beats frozen theory on holdout
+#     [PASS] H2 two-channel with data-driven q* err <= 15% for xi_n >= 5
+#     [PASS] H2 finite q*-channel median error <= 15% at every xi_n
+
+# [H3, EXACT IDENTITY] pair rule, phase = anti, rho_site = 0.6: penalty Pi = N_geom/max(n1,n2) by exponent mismatch Delta = |ln n1/n2|
+#     xi_n med|rho_eff| |    D in [0,0.5)    D in [0.5,1)      D in [1,2)      D in [2,4)    D in [4,inf) | identity err
+#        0        0.002 |   1.000 (n=497)   1.000 (n=451)   1.000 (n=732)   1.000 (n=739)   1.000 (n=560) | 4.4e-16
+#        1        0.002 |   1.000 (n=451)   1.000 (n=477)   1.000 (n=744)   1.000 (n=739)   1.000 (n=568) | 4.4e-16
+#        2        0.002 |   1.000 (n=441)   1.000 (n=474)   1.000 (n=750)   1.000 (n=737)   1.000 (n=577) | 4.4e-16
+#        5        0.003 |   1.000 (n=440)   1.000 (n=468)   1.000 (n=758)   1.000 (n=735)   1.000 (n=578) | 4.4e-16
+#       10        0.005 |   1.000 (n=440)   1.000 (n=471)   1.000 (n=758)   1.000 (n=734)   1.000 (n=576) | 4.4e-16
+#       20        0.007 |   1.000 (n=445)   1.000 (n=469)   1.000 (n=759)   1.000 (n=729)   1.000 (n=577) | 4.4e-16
+#       50        0.012 |   1.001 (n=445)   1.000 (n=469)   1.000 (n=760)   1.000 (n=726)   1.000 (n=579) | 4.4e-16
+#      inf        0.600 |   1.430 (n=277)   1.220 (n=291)   1.099 (n=478)   1.022 (n=818)  1.001 (n=1115) | 4.4e-16
+
+# ==============================================================================
+# LAW CARD v22.2 (node phase; numbers from this run)
+# ==============================================================================
+
+# -- EXACT (derived, checked to machine precision; not falsifiable, use as-is) --
+#  (E1) d eps = sum_x K(x) d mu(x),   K(x) = -Im <g1| tau_z(x) |g2>
+#  (E2) Cbar = K R K^T ,   N(xi_n) = K^T R(xi_n) K ,   N_geom = lambda_max(Cbar)
+#  (E3) N_geom = nbar [1 + sqrt(delta^2 + (1-delta^2) rho_eff^2)],  nbar=(n1+n2)/2, rho_eff = c/sqrt(n1 n2)
+#  (E4) penalty Pi = N_geom/max(n1,n2) = [1+sqrt(delta^2+(1-delta^2) rho_eff^2)]/(1+|delta|) -> 1 for |Delta|>>1
+#       (checked: identity_err ~ 1e-16 across all phases/xi_n -- this is algebra, not a physics test)
+
+# -- CANDIDATE EMPIRICAL (fit to this run; validity range and diagnostics attached, NOT closed-form yet) --
+#  (C1) frozen-shape: N(0) ~ kappa L xi^-2 exp[-(L-1)/xi],   kappa = 1.315  (resid std 0.311); residual correlates with E_gap and xi (|corr| up to 0.77) -> NOT closed.
+#  (C2) corrected: log N0 = a0 + a1(L-1)/xi + a2 logL + a3 logxi + a4 log(E_gap/Delta) + a5 Delta/Ez + a6 mu/mu_c; resid std 0.060 (down from 0.311); residual |corr| now up to 0.10. Coeffs are FIT, not yet derived -- treat as a target for closed-form matching.
+#  (C3) noise channel: N(xi_n)/N(0) = p0 u(xi_n,L) + (1-p0) lam(xi_n,q*),  q* found by maximizing captured oscillatory energy of K(x) (median capture 100%); q* matches 2 kF within 0.2 rad in 39% of node-phase points -> use q*=2kF ONLY where that fraction is high; recompute q* per-phase otherwise (see anti-phase numbers above, where 2kF failed).
+#       Valid regime found empirically: xi_n >= 5 (short-range xi_n regime is NOT well described by this two-channel form).
+#  (C4) design implication (still candidate, follows from C1-C3): tune d eps/d mu -> 0 (p0 -> 0) to suppress the long-range noise channel; the E4 identity then bounds correlated-noise amplification given exponent mismatch.
+#       p0(anti)/p0(node) = 3.05e-06 in this run -> candidate suppression factor at the eps-extremum, NOT yet confirmed as a general law (anti-phase channel structure itself is not yet understood -- see q*-search above).
+
+# outputs -> outputs_v22_2/  (results_v22_2.json, points_v22_2.csv, kernels_v22_2.npz, fig1_laws_v22_2.png, fig2_residuals_v22_2.png, fig3_h3_phase_diagram_v22_2.png, law_card_v22_2.md)
